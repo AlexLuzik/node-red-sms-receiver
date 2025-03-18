@@ -25,7 +25,7 @@ This project provides a Node-RED-based system for receiving SMS messages via Net
    cd node-red-sms-receiver
    ```
 
-2. **Modify the `.env` file** (if needed) to configure database credentials and timezone.
+2. **Modify the `docker-compose.yml` file** (if needed) to configure database credentials and timezone.
 
 3. **Start the services using Docker Compose:**
    ```sh
