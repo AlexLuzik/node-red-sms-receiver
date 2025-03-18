@@ -7,7 +7,6 @@ This project provides a Node-RED-based system for receiving SMS messages via Net
 ## 🚀 Features
 - 📲 Receives SMS messages using Netgear LM1200 modems
 - 📂 Stores messages in a PostgreSQL database
-- 🔗 Provides an API for accessing SMS logs
 - 📡 Can forward SMS messages to Telegram
 - 🐳 Runs in Docker for easy deployment
 - 🔄 New modems can be added dynamically using an **inject node** in Node-RED
@@ -22,7 +21,7 @@ This project provides a Node-RED-based system for receiving SMS messages via Net
 
 1. **Clone this repository:**
    ```sh
-   git clone https://github.com/your-repo/node-red-sms-receiver.git
+   git clone https://github.com/AlexLuzik/node-red-sms-receiver.git
    cd node-red-sms-receiver
    ```
 
@@ -65,10 +64,7 @@ To enable Telegram notifications:
 
 ## 📌 Usage
 - 📥 Incoming SMS messages are processed and stored in the database.
-- 🌍 The system provides a **REST API endpoint** to retrieve SMS logs.
 - 📲 SMS messages are forwarded to Telegram in the following format:
-
-  ![Example SMS](https://your-image-host.com/example-sms.png)
 
 ## 🔧 Troubleshooting
 - Ensure the modem is properly connected and configured.
