@@ -64,7 +64,7 @@ To enable Telegram notifications:
 
 ## 📌 Usage
 - 📥 Incoming SMS messages are processed and stored in the database.
-- 📲 SMS messages are forwarded to Telegram in the following format:
+- 📲 SMS messages are forwarded to Telegram.
 
 ## 🔧 Troubleshooting
 - Ensure the modem is properly connected and configured.
