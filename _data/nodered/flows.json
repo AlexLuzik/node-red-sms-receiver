@@ -1,0 +1,1071 @@
+[
+    {
+        "id": "288de775d0f95587",
+        "type": "tab",
+        "label": "SMS Receiver",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "6e91c9be91c25f78",
+        "type": "postgreSQLConfig",
+        "name": "",
+        "host": "10.5.0.10",
+        "hostFieldType": "str",
+        "port": 5432,
+        "portFieldType": "num",
+        "database": "nodered",
+        "databaseFieldType": "str",
+        "ssl": "false",
+        "sslFieldType": "bool",
+        "applicationName": "",
+        "applicationNameType": "str",
+        "max": 10,
+        "maxFieldType": "num",
+        "idle": 1000,
+        "idleFieldType": "num",
+        "connectionTimeout": 10000,
+        "connectionTimeoutFieldType": "num",
+        "user": "node-red-user",
+        "userFieldType": "str",
+        "password": "node-red-pass",
+        "passwordFieldType": "str"
+    },
+    {
+        "id": "f6325cd869f7afdc",
+        "type": "telegram bot",
+        "botname": "SMS Receiver",
+        "usernames": "",
+        "chatids": "",
+        "baseapiurl": "",
+        "testenvironment": false,
+        "updatemode": "none",
+        "addressfamily": "4",
+        "pollinterval": "300",
+        "usesocks": false,
+        "sockshost": "",
+        "socksprotocol": "socks5",
+        "socksport": "6667",
+        "socksusername": "anonymous",
+        "sockspassword": "",
+        "bothost": "",
+        "botpath": "",
+        "localbothost": "",
+        "localbotport": "8443",
+        "publicbotport": "8443",
+        "privatekey": "",
+        "certificate": "",
+        "useselfsignedcertificate": false,
+        "sslterminated": false,
+        "verboselogging": false
+    },
+    {
+        "id": "89d25d7bcdc20e1d",
+        "type": "function",
+        "z": "288de775d0f95587",
+        "name": "Get data",
+        "func": "let authData = flow.get('authData');\n\nmsg.url = `http://${msg.modemConfig.modem_ip}/api/model.json`;\nmsg.method = 'GET';\n\nmsg.headers = {\n    \"Cookie\": \"sessionId=\" + authData[msg.modemConfig.id].cookies.sessionId\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 640,
+        "y": 220,
+        "wires": [
+            [
+                "03ee23002baa96a8"
+            ]
+        ]
+    },
+    {
+        "id": "03ee23002baa96a8",
+        "type": "http request",
+        "z": "288de775d0f95587",
+        "name": "",
+        "method": "use",
+        "ret": "txt",
+        "paytoqs": "body",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 790,
+        "y": 220,
+        "wires": [
+            [
+                "a70845fbc9edd3e8"
+            ]
+        ]
+    },
+    {
+        "id": "27647a989d6a5374",
+        "type": "function",
+        "z": "288de775d0f95587",
+        "name": "Parse Token",
+        "func": "var result = [];\n\nmsg.redirectList.forEach(item => {\n    if (item.location.includes(\"model.json\")) {\n        let sessionId = item.cookies.sessionId.value;\n        result = {sessionId: sessionId };\n    }\n});\n\n\nif (result.hasOwnProperty(\"sessionId\")) {\n    let authData = {\n        token: msg.payload.session.secToken,\n        cookies: result\n    }\n\n    flow.set(`authData.${msg.modemConfig.id}`, authData);\n\n    msg.payload = authData;\n}\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 130,
+        "y": 400,
+        "wires": [
+            [
+                "7097d136880fbe23"
+            ]
+        ]
+    },
+    {
+        "id": "f45f37d84af6bfc8",
+        "type": "switch",
+        "z": "288de775d0f95587",
+        "name": "",
+        "property": "payload.session.userRole",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "Admin",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "Guest",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 110,
+        "y": 360,
+        "wires": [
+            [
+                "e69953125c8f3055"
+            ],
+            [
+                "27647a989d6a5374"
+            ]
+        ]
+    },
+    {
+        "id": "4131297a6ebaed9f",
+        "type": "function",
+        "z": "288de775d0f95587",
+        "name": "Auth request",
+        "func": "let authData = flow.get('authData');\n\nmsg.headers = {\n    \"Cookie\": \"sessionId=\" + authData[msg.modemConfig.id].cookies.sessionId,\n    \"Content-Type\": \"application/x-www-form-urlencoded\"\n};\n\nmsg.payload = {\n    'token': authData[msg.modemConfig.id].token,\n    'ok_redirect': '/true.html',\n    'err_redirect': '/false.html',\n    'session.password': `${msg.modemConfig.modem_password}`\n\n};\n\nmsg.url = `http://${msg.modemConfig.modem_ip}/Forms/config`;\nmsg.method = 'POST';\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 130,
+        "y": 480,
+        "wires": [
+            [
+                "5fcdaaa079876c4f"
+            ]
+        ]
+    },
+    {
+        "id": "5fcdaaa079876c4f",
+        "type": "http request",
+        "z": "288de775d0f95587",
+        "name": "",
+        "method": "use",
+        "ret": "txt",
+        "paytoqs": "body",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 130,
+        "y": 520,
+        "wires": [
+            [
+                "643e314f9da20ac8"
+            ]
+        ]
+    },
+    {
+        "id": "643e314f9da20ac8",
+        "type": "function",
+        "z": "288de775d0f95587",
+        "name": "Parse cookies",
+        "func": "var result = [];\n\nmsg.redirectList.forEach(item => {\n    if (item.location.includes(\"true.html\")) {\n        let sessionId = item.cookies.sessionId.value;\n        result = {sessionId: sessionId };\n    }\n});\n\n\nif (result.hasOwnProperty(\"sessionId\")) {\n    flow.set(`authData.${msg.modemConfig.id}.cookies`, result);\n    \n    msg.payload = result;\n}\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 140,
+        "y": 560,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "7097d136880fbe23",
+        "type": "delay",
+        "z": "288de775d0f95587",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "5",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 120,
+        "y": 440,
+        "wires": [
+            [
+                "4131297a6ebaed9f"
+            ]
+        ]
+    },
+    {
+        "id": "a70845fbc9edd3e8",
+        "type": "switch",
+        "z": "288de775d0f95587",
+        "name": "",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "200",
+                "vt": "num"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 110,
+        "y": 280,
+        "wires": [
+            [
+                "4825b055ded84e57"
+            ]
+        ]
+    },
+    {
+        "id": "4825b055ded84e57",
+        "type": "json",
+        "z": "288de775d0f95587",
+        "name": "",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 110,
+        "y": 320,
+        "wires": [
+            [
+                "f45f37d84af6bfc8"
+            ]
+        ]
+    },
+    {
+        "id": "a6616e21b3bc4190",
+        "type": "function",
+        "z": "288de775d0f95587",
+        "name": "Create msg obj",
+        "func": "let smsCollection = [];\n\nif (msg.payload.sms.msgs.length === 1 && Object.keys(msg.payload.sms.msgs[0]).length === 0) {\n    msg.payload = { smsMessages: [] };\n} else {\n    msg.payload.sms.msgs.forEach((msgObj, index) => {\n        if (Object.keys(msgObj).length > 0) {\n            smsCollection.push({\n                msgObj\n            });\n        }\n    });\n\n    msg.payload = { smsMessages: smsCollection };\n}\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 640,
+        "y": 280,
+        "wires": [
+            [
+                "9dbd76b7e4f71003",
+                "b743d9674a1dd628"
+            ]
+        ]
+    },
+    {
+        "id": "9dbd76b7e4f71003",
+        "type": "function",
+        "z": "288de775d0f95587",
+        "name": "Msg time convert",
+        "func": "msg.payload.smsMessages.forEach((item) => {\n    let rawTime = item.msgObj.rxTime;\n\n\n    let parts = rawTime.match(/(\\d{2})\\/(\\d{2})\\/(\\d{2}) (\\d{2}):(\\d{2}):(\\d{2}) (AM|PM)/);\n    if (parts) {\n        let day = parseInt(parts[1], 10);\n        let month = parseInt(parts[2], 10) - 1;\n        let year = 2000 + parseInt(parts[3], 10);\n        let hours = parseInt(parts[4], 10);\n        let minutes = parseInt(parts[5], 10);\n        let seconds = parseInt(parts[6], 10);\n        let ampm = parts[7];\n\n        if (ampm === \"PM\" && hours !== 12) {\n            hours += 12;\n        } else if (ampm === \"AM\" && hours === 12) {\n            hours = 0;\n        }\n\n        let dateUTC = new Date(Date.UTC(year, month, day, hours, minutes, seconds));\n\n        const formatDate = (date, timeZone) => {\n            let options = {\n                timeZone,\n                year: \"numeric\",\n                month: \"2-digit\",\n                day: \"2-digit\",\n                hour: \"2-digit\",\n                minute: \"2-digit\",\n                second: \"2-digit\",\n                hour12: false\n            };\n            return new Intl.DateTimeFormat(\"en-US\", options)\n                .format(date)\n                .replace(\",\", \"\")\n                .replace(/\\//g, \"-\");\n        };\n\n        let chicagoTime = formatDate(dateUTC, \"America/Chicago\");\n        let utcTime = formatDate(dateUTC, \"UTC\");\n\n        chicagoTime = chicagoTime.replace(\" 24:\", \" 00:\");\n        utcTime = utcTime.replace(\" 24:\", \" 00:\");\n\n        delete item.msgObj.rxTime;\n        item.msgObj.utcTime = utcTime;\n        item.msgObj.localTime = chicagoTime;\n    }\n});\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 390,
+        "y": 320,
+        "wires": [
+            [
+                "97cdd7da17152d35"
+            ]
+        ]
+    },
+    {
+        "id": "887e879a92d5e623",
+        "type": "postgresql",
+        "z": "288de775d0f95587",
+        "name": "",
+        "query": "SELECT * FROM public.modems\nWHERE enabled = true\nORDER BY id ASC ",
+        "postgreSQLConfig": "6e91c9be91c25f78",
+        "split": false,
+        "rowsPerMsg": 1,
+        "outputs": 1,
+        "x": 290,
+        "y": 160,
+        "wires": [
+            [
+                "c78ba12be49bb94d"
+            ]
+        ]
+    },
+    {
+        "id": "6d841c19635a97fa",
+        "type": "inject",
+        "z": "288de775d0f95587",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "0.5",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 130,
+        "y": 160,
+        "wires": [
+            [
+                "887e879a92d5e623"
+            ]
+        ]
+    },
+    {
+        "id": "3c916e8c5271559c",
+        "type": "debug",
+        "z": "288de775d0f95587",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 600,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "c78ba12be49bb94d",
+        "type": "function",
+        "z": "288de775d0f95587",
+        "name": "Save params",
+        "func": "let authData = {};\n\nmsg.payload.forEach(modem => {\n    authData[modem.id] = {\n        cookies: {\n            sessionId: ''\n        }\n    };\n});\n\nmsg.payload = msg.payload.reduce((acc, modem) => {\n    acc[modem.id] = modem;\n    return acc;\n}, {});\n\nflow.set('modems', msg.payload);\nflow.set('authData', authData);\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 160,
+        "wires": [
+            [
+                "3c916e8c5271559c"
+            ]
+        ]
+    },
+    {
+        "id": "7e1e81b6e998928b",
+        "type": "inject",
+        "z": "288de775d0f95587",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "10",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "5",
+        "topic": "",
+        "payload": "modems",
+        "payloadType": "flow",
+        "x": 140,
+        "y": 220,
+        "wires": [
+            [
+                "989f0b8ec8ab272c"
+            ]
+        ]
+    },
+    {
+        "id": "989f0b8ec8ab272c",
+        "type": "split",
+        "z": "288de775d0f95587",
+        "name": "",
+        "splt": "\\n",
+        "spltType": "str",
+        "arraySplt": 1,
+        "arraySpltType": "len",
+        "stream": false,
+        "addname": "",
+        "property": "payload",
+        "x": 290,
+        "y": 220,
+        "wires": [
+            [
+                "5062f5c441580520"
+            ]
+        ]
+    },
+    {
+        "id": "5062f5c441580520",
+        "type": "change",
+        "z": "288de775d0f95587",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "modemConfig",
+                "pt": "msg",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 460,
+        "y": 220,
+        "wires": [
+            [
+                "89d25d7bcdc20e1d"
+            ]
+        ]
+    },
+    {
+        "id": "97cdd7da17152d35",
+        "type": "split",
+        "z": "288de775d0f95587",
+        "name": "",
+        "splt": "\\n",
+        "spltType": "str",
+        "arraySplt": 1,
+        "arraySpltType": "len",
+        "stream": false,
+        "addname": "",
+        "property": "payload.smsMessages",
+        "x": 550,
+        "y": 320,
+        "wires": [
+            [
+                "2598495e1ca5bf5f"
+            ]
+        ]
+    },
+    {
+        "id": "2598495e1ca5bf5f",
+        "type": "change",
+        "z": "288de775d0f95587",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "message",
+                "pt": "msg",
+                "to": "payload.smsMessages.msgObj",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 710,
+        "y": 320,
+        "wires": [
+            [
+                "aea0b4f828329280"
+            ]
+        ]
+    },
+    {
+        "id": "aea0b4f828329280",
+        "type": "function",
+        "z": "288de775d0f95587",
+        "name": "Save msg query",
+        "func": "var query = `\nINSERT INTO messages (modem_id, msg_id, sender, message, utc_timestamp, tg_sent) \nVALUES (${msg.modemConfig.id}, '${msg.message.id}', ${msg.message.sender ? `'${msg.message.sender}'` : 'NULL'}, ${msg.message.text ? `'${msg.message.text}'` : 'NULL'}, \n        '${msg.message.utcTime}'::TIMESTAMP, FALSE);\n`;\n\nmsg.query = query;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 360,
+        "wires": [
+            [
+                "448c9121dbbb47bb"
+            ]
+        ]
+    },
+    {
+        "id": "448c9121dbbb47bb",
+        "type": "postgresql",
+        "z": "288de775d0f95587",
+        "name": "",
+        "query": "",
+        "postgreSQLConfig": "6e91c9be91c25f78",
+        "split": false,
+        "rowsPerMsg": 1,
+        "outputs": 1,
+        "x": 550,
+        "y": 360,
+        "wires": [
+            [
+                "c86873eab7a05c91"
+            ]
+        ]
+    },
+    {
+        "id": "c86873eab7a05c91",
+        "type": "switch",
+        "z": "288de775d0f95587",
+        "name": "",
+        "property": "pgsql.rowCount",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "gte",
+                "v": "1",
+                "vt": "num"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 690,
+        "y": 360,
+        "wires": [
+            [
+                "bab37a0aec1e1ce9"
+            ]
+        ]
+    },
+    {
+        "id": "98af48bd94aec519",
+        "type": "function",
+        "z": "288de775d0f95587",
+        "name": "Del msg request",
+        "func": "let authData = flow.get('authData');\n\nmsg.headers = {\n    \"Cookie\": \"sessionId=\" + authData[msg.modemConfig.id].cookies.sessionId,\n    \"Content-Type\": \"application/x-www-form-urlencoded\"\n};\n\nmsg.payload = {\n    'token': authData[msg.modemConfig.id].token,\n    'ok_redirect': '/true.html',\n    'err_redirect': '/false.html',\n    'sms.deleteId': `${msg.message.id}`\n\n};\n\nmsg.url = `http://${msg.modemConfig.modem_ip}/Forms/config`;\nmsg.method = 'POST';\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 420,
+        "wires": [
+            [
+                "1f81a6901151a827"
+            ]
+        ]
+    },
+    {
+        "id": "1f81a6901151a827",
+        "type": "http request",
+        "z": "288de775d0f95587",
+        "name": "",
+        "method": "use",
+        "ret": "txt",
+        "paytoqs": "body",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 730,
+        "y": 420,
+        "wires": [
+            [
+                "7f5203ec0e03745f"
+            ]
+        ]
+    },
+    {
+        "id": "7f5203ec0e03745f",
+        "type": "debug",
+        "z": "288de775d0f95587",
+        "name": "debug 7",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 880,
+        "y": 440,
+        "wires": []
+    },
+    {
+        "id": "bab37a0aec1e1ce9",
+        "type": "delay",
+        "z": "288de775d0f95587",
+        "name": "",
+        "pauseType": "rate",
+        "timeout": "3",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "5",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": true,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 380,
+        "y": 420,
+        "wires": [
+            [
+                "98af48bd94aec519"
+            ]
+        ]
+    },
+    {
+        "id": "6c0e82123026235b",
+        "type": "delay",
+        "z": "288de775d0f95587",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "5",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 480,
+        "y": 280,
+        "wires": [
+            [
+                "a6616e21b3bc4190"
+            ]
+        ]
+    },
+    {
+        "id": "e331f0e86fdec14a",
+        "type": "inject",
+        "z": "288de775d0f95587",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "10",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 130,
+        "y": 640,
+        "wires": [
+            [
+                "f9af586e393868e8"
+            ]
+        ]
+    },
+    {
+        "id": "f9af586e393868e8",
+        "type": "postgresql",
+        "z": "288de775d0f95587",
+        "name": "",
+        "query": "SELECT \n    id,\n\tmodem_id,\n\tsender,\n\tmessage,\n    to_char(utc_timestamp AT TIME ZONE 'America/Chicago', 'DD.MM.YYYY HH24:MI:SS') AS timestamp\nFROM messages\nWHERE tg_sent = false\nORDER BY id ASC;",
+        "postgreSQLConfig": "6e91c9be91c25f78",
+        "split": false,
+        "rowsPerMsg": 1,
+        "outputs": 1,
+        "x": 290,
+        "y": 640,
+        "wires": [
+            [
+                "84f7b2c879d46b24"
+            ]
+        ]
+    },
+    {
+        "id": "4266f462b370d616",
+        "type": "function",
+        "z": "288de775d0f95587",
+        "name": "Form TG message",
+        "func": "let modems = flow.get('modems');\n\nmsg.payload = {\n    type: 'message',\n    content: '[' + msg.message.timestamp + '][From: ' + msg.message.sender + '][To: ' + modems[msg.message.modem_id].modem_phone_number + '] ' + msg.message.message,\n    chatId: modems[msg.message.modem_id].tg_chatid,\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 700,
+        "wires": [
+            [
+                "42630300ad8326f0"
+            ]
+        ]
+    },
+    {
+        "id": "42630300ad8326f0",
+        "type": "telegram sender",
+        "z": "288de775d0f95587",
+        "name": "",
+        "bot": "f6325cd869f7afdc",
+        "haserroroutput": false,
+        "outputs": 1,
+        "x": 150,
+        "y": 740,
+        "wires": [
+            [
+                "cf760e9d05c6ab78"
+            ]
+        ]
+    },
+    {
+        "id": "84f7b2c879d46b24",
+        "type": "split",
+        "z": "288de775d0f95587",
+        "name": "",
+        "splt": "\\n",
+        "spltType": "str",
+        "arraySplt": 1,
+        "arraySpltType": "len",
+        "stream": false,
+        "addname": "",
+        "property": "payload",
+        "x": 430,
+        "y": 640,
+        "wires": [
+            [
+                "936b03d0f1d63575"
+            ]
+        ]
+    },
+    {
+        "id": "473bf56053c937bd",
+        "type": "debug",
+        "z": "288de775d0f95587",
+        "name": "debug 8",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 600,
+        "y": 760,
+        "wires": []
+    },
+    {
+        "id": "936b03d0f1d63575",
+        "type": "change",
+        "z": "288de775d0f95587",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "message",
+                "pt": "msg",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 150,
+        "y": 700,
+        "wires": [
+            [
+                "4266f462b370d616"
+            ]
+        ]
+    },
+    {
+        "id": "cf760e9d05c6ab78",
+        "type": "switch",
+        "z": "288de775d0f95587",
+        "name": "",
+        "property": "payload.sentMessageId",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "istype",
+                "v": "number",
+                "vt": "number"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 310,
+        "y": 740,
+        "wires": [
+            [
+                "558c91d77b95d614"
+            ]
+        ]
+    },
+    {
+        "id": "558c91d77b95d614",
+        "type": "postgresql",
+        "z": "288de775d0f95587",
+        "name": "",
+        "query": "UPDATE messages\nSET tg_sent = TRUE\nWHERE id = '{{{ msg.message.id }}}';",
+        "postgreSQLConfig": "6e91c9be91c25f78",
+        "split": false,
+        "rowsPerMsg": 1,
+        "outputs": 1,
+        "x": 450,
+        "y": 740,
+        "wires": [
+            [
+                "473bf56053c937bd"
+            ]
+        ]
+    },
+    {
+        "id": "e69953125c8f3055",
+        "type": "switch",
+        "z": "288de775d0f95587",
+        "name": "",
+        "property": "payload.sms.msgCount",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "gt",
+                "v": "0",
+                "vt": "num"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 350,
+        "y": 280,
+        "wires": [
+            [
+                "6c0e82123026235b"
+            ]
+        ]
+    },
+    {
+        "id": "a6d814baea0d03c9",
+        "type": "inject",
+        "z": "288de775d0f95587",
+        "name": "Create tables",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 140,
+        "y": 40,
+        "wires": [
+            [
+                "0574924cf3fe9f5b"
+            ]
+        ]
+    },
+    {
+        "id": "2b538a7390c7b6f0",
+        "type": "postgresql",
+        "z": "288de775d0f95587",
+        "name": "",
+        "query": "INSERT INTO modems (modem_ip, modem_password, modem_name, modem_phone_number, tg_chatid, enabled)\nVALUES ('netgear_lm1200_ip', 'lm1200_pass', 'Modem NickName', '+1 111 111 1111', 111111111, TRUE);\n\n",
+        "postgreSQLConfig": "6e91c9be91c25f78",
+        "split": false,
+        "rowsPerMsg": 1,
+        "outputs": 1,
+        "x": 310,
+        "y": 100,
+        "wires": [
+            [
+                "1143b5b9c247d59c",
+                "887e879a92d5e623"
+            ]
+        ]
+    },
+    {
+        "id": "0574924cf3fe9f5b",
+        "type": "postgresql",
+        "z": "288de775d0f95587",
+        "name": "",
+        "query": "CREATE TABLE IF NOT EXISTS modems (\n    id SERIAL PRIMARY KEY,\n    modem_ip TEXT NOT NULL,\n    modem_password TEXT NOT NULL,\n    modem_name TEXT NOT NULL,\n    modem_phone_number TEXT NOT NULL,\n    tg_chatid BIGINT NOT NULL,\n    enabled BOOLEAN DEFAULT TRUE\n);\n\n-- Создание таблицы messages\nCREATE TABLE IF NOT EXISTS messages (\n    id SERIAL PRIMARY KEY,\n    modem_id INTEGER NOT NULL,\n    msg_id VARCHAR(255) NOT NULL,\n    sender VARCHAR(255),\n    message TEXT,\n    utc_timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,\n    tg_sent BOOLEAN DEFAULT FALSE\n);",
+        "postgreSQLConfig": "6e91c9be91c25f78",
+        "split": false,
+        "rowsPerMsg": 1,
+        "outputs": 1,
+        "x": 310,
+        "y": 40,
+        "wires": [
+            [
+                "60f7d3bc4a93d564"
+            ]
+        ]
+    },
+    {
+        "id": "60f7d3bc4a93d564",
+        "type": "debug",
+        "z": "288de775d0f95587",
+        "name": "debug 3",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 480,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "981d79968f2d13ab",
+        "type": "inject",
+        "z": "288de775d0f95587",
+        "name": "Create modem",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 140,
+        "y": 100,
+        "wires": [
+            [
+                "2b538a7390c7b6f0"
+            ]
+        ]
+    },
+    {
+        "id": "1143b5b9c247d59c",
+        "type": "debug",
+        "z": "288de775d0f95587",
+        "name": "debug 4",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 480,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "b743d9674a1dd628",
+        "type": "debug",
+        "z": "288de775d0f95587",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 920,
+        "y": 300,
+        "wires": []
+    }
+]

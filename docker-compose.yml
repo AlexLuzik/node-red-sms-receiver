@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  nodered:
+    build: .
+    container_name: mynodered
+    restart: always
+    user: root
+    ports:
+      - "1880:1880"
+    volumes:
+      - ./_data/nodered:/data
+    privileged: true
+    environment:
+      - TZ=America/Chicago
+    depends_on:
+      - postgres
+    networks:
+      mynetwork:
+        ipv4_address: 10.2.0.11
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
+  postgres:
+    image: postgres:latest
+    container_name: mypostgres
+    restart: always
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: OmAw8t85953sUzQztC4MM4Y13gIIUhc3KMKnCGpm
+    volumes:
+      - ./_data/pg:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      mynetwork:
+        ipv4_address: 10.2.0.10
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
+networks:
+  mynetwork:
+    driver: bridge
+    ipam:
+       config:
+         - subnet: 10.2.0.0/25
+           gateway: 10.2.0.1
