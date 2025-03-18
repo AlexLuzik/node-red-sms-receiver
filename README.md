@@ -48,8 +48,8 @@ To access the database manually:
 psql -h localhost -U node-red-user -d nodered
 ```
 
-## 📡 Modem Network Configuration
-### Before adding a modem, ensure it is configured with a static IP address and DHCP is disabled. Follow these steps:
+### 📡 Modem Network Configuration
+Before adding a modem, ensure it is configured with a static IP address and DHCP is disabled. Follow these steps:
 1. Switch the modem to router mode in its web interface.
 2. Assign a static IP address to the modem.
 3. Switch the modem back to bridge mode after setting the IP.
